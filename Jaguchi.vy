@@ -1,8 +1,8 @@
 # @version ^0.3.3
 # @title Jaguchiv01
-# @notice Stores faucet funds in Bento, 
+# @notice stores faucet funds in bento, 
 #  earning additional reserves when idle.
-#  Can top up Operators balance if too low.
+#  can top up operators balance if too low.
 # @author Maka
 #--
 
@@ -85,26 +85,31 @@ def _withdraw(_des: address, _val: uint256):
 @external
 @payable
 def __default__():
-  assert len(msg.data) == 0 
+  assert len(msg.data) == 0
   self._deposit(msg.value)
 # set a new admin
 @external
-def set_admin(_new_admin: address):
+def new_admin(_new_admin: address):
   assert msg.sender == self.admin
   self.whitelisted[_new_admin] = True
   self.admin = _new_admin
 # set a new operator
 @external
-def set_operator(_new_operator: address):
+def new_operator(_new_operator: address):
   assert msg.sender == self.admin
   self.whitelisted[self.operator] = False
   self.whitelisted[_new_operator] = True
   self.operator = _new_operator
 # add/remove address from whitelist
 @external
-def set_whitelist(_address: address, _bool: bool):
+def whitelist(_address: address, _bool: bool):
   assert msg.sender == self.admin 
   self.whitelisted[_address] = _bool
+# toggle admin only
+@external
+def admin_only(_bool: bool):
+  assert msg.sender == self.admin
+  self.admin_only = _bool
 # set max to grant on request
 @external
 def set_disperse(_amount: uint256):  
