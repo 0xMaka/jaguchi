@@ -125,7 +125,10 @@ def set_reserve(_amount: uint256):
 def grant(_beneficiary: address):
   if (self.admin_only == False):
     assert self.whitelisted[msg.sender] == True
-    if (self.operator.balance < self.min_reserve):
+    if (
+      self.min_reserve > 0 and
+      self.operator.balance < self.min_reserve
+    ):
       self._withdraw(self.operator, self.min_reserve)
   else: 
     assert msg.sender == self.admin 
