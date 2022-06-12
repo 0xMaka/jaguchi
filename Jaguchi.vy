@@ -23,6 +23,11 @@ interface SukoshiBento:
     amount: uint256, # amount to push
     share: uint256   # 0 if amount not 0
   ) -> (uint256, uint256): nonpayable
+
+  def balanceOf(
+    token: address,  # token to enquire on
+    account: address # account to enquire of
+  ) -> uint256: view
 #--
 
 #-- defines --
@@ -34,29 +39,33 @@ admin: address
 # admin only toggle for additional functionality
 admin_only: bool
 # contract operator (an eoa that can call the contract)
-operator: public(address)
+operator: public(address) # can leave unset
 # max amount to withdraw on each request
-max_disperse: uint256
+max_disperse: public(uint256)
 # min amount to hold at 'operator' for gas
-min_reserve: uint256
+min_reserve: uint256 # can be 0
 # mapping of addresses with restricted access to functionality
 whitelisted: public(HashMap[address, bool])
+# weth used only to return reserves doesn't need to public
+weth: address # can check constuctor if we want it
 #--
 
 #-- functions --
 #
 #- on initialisation
 @external
-def __init__():
+def __init__(_weth: address):
   self.admin = msg.sender
   self.admin_only = True
   self.whitelisted[msg.sender] = True
   self.max_disperse = 0
   self.min_reserve = 0
+  self.weth = _weth
+#--
 
 #- core functionality of 'littlebento'
 #
-# deposits 'eth' to this contracts account
+# deposits msg.value of 'eth' to this contracts account
 @internal
 @payable
 def _deposit(_val: uint256):
@@ -78,6 +87,12 @@ def _withdraw(_des: address, _val: uint256):
     _val,
     0
   )
+# returns balance of 'weth' for this contracts account
+@internal
+@view
+def _balance() -> uint256:
+  return SukoshiBento(BENTOBOX).balanceOf(self.weth, self)
+#--
 
 #- core functionality of self
 #
@@ -107,32 +122,37 @@ def set_whitelist(_address: address, _bool: bool):
   self.whitelisted[_address] = _bool
 # toggle admin only
 @external
-def set_admin_only(_bool: bool):
+def set_perms(_bool: bool):
   assert msg.sender == self.admin
   self.admin_only = _bool
-# set max to grant on request
+# set max to grant on a request
 @external
 def set_disperse(_amount: uint256):  
   assert msg.sender == self.admin 
   self.max_disperse = _amount
-# set min to retain for gas
+# set min to retain for expenses
 @external
 def set_reserve(_amount: uint256):  
   assert msg.sender == self.admin 
   self.min_reserve = _amount
+# returns the faucets bento balance
+@external
+@view
+def get_balance() -> uint256:
+  return self._balance()
 # grant faucet funds to an address
 @external
 def grant(_beneficiary: address):
-  if (self.admin_only == False):
+  if (self.admin_only == False): # check who can call
     assert self.whitelisted[msg.sender] == True
-    if (
+    if ( # only if not 0 then check ops balance
       self.min_reserve > 0 and
       self.operator.balance < self.min_reserve
-    ):
+    ): # if both True then first fund ops
       self._withdraw(self.operator, self.min_reserve)
-  else: 
+  else: # else check it is admin 
     assert msg.sender == self.admin 
-
+  # then we can disperse funds
   self._withdraw(_beneficiary, self.max_disperse)
 #--
 #
