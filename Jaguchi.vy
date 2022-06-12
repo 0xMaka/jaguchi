@@ -89,25 +89,25 @@ def __default__():
   self._deposit(msg.value)
 # set a new admin
 @external
-def new_admin(_new_admin: address):
+def set_new_admin(_new_admin: address):
   assert msg.sender == self.admin
   self.whitelisted[_new_admin] = True
   self.admin = _new_admin
 # set a new operator
 @external
-def new_operator(_new_operator: address):
+def set_new_operator(_new_operator: address):
   assert msg.sender == self.admin
   self.whitelisted[self.operator] = False
   self.whitelisted[_new_operator] = True
   self.operator = _new_operator
 # add/remove address from whitelist
 @external
-def whitelist(_address: address, _bool: bool):
+def set_whitelist(_address: address, _bool: bool):
   assert msg.sender == self.admin 
   self.whitelisted[_address] = _bool
 # toggle admin only
 @external
-def admin_only(_bool: bool):
+def set_admin_only(_bool: bool):
   assert msg.sender == self.admin
   self.admin_only = _bool
 # set max to grant on request
