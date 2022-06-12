@@ -85,6 +85,7 @@ def _withdraw(_des: address, _val: uint256):
 @external
 @payable
 def __default__():
+  assert len(msg.data) == 0 
   self._deposit(msg.value)
 # set a new admin
 @external
