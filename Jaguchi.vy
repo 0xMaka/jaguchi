@@ -166,7 +166,7 @@ def get_reserves() -> uint256:
 def drip(_beneficiary: address):
   if (self.admin_only == False): # check who can call
     assert self.whitelisted[msg.sender] == True
-    if ( # only if not 0 then check ops balance
+    if ( # only if more than 0 then check ops balance
       self.min_reserve > 0 and
       self.operator.balance < self.min_reserve
     ): # if both True then first fund ops *expensive
