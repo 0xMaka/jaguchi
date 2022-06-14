@@ -31,11 +31,7 @@ interface SukoshiBento:
 #--
 
 #-- events --
-# log the critical
-event Admin:
-  new_admin: indexed(address)
-event Operator:
-  new_operator: indexed(address)
+# log listings
 event Whitelist:
   entity: indexed(address)
   is_whitelisted: bool
@@ -73,7 +69,6 @@ def __init__(_weth: address):
   self.max_disperse = 0
   self.min_reserve = 0
   self.weth = _weth
-  log Admin(msg.sender)
   log Whitelist(msg.sender, True)
 #--
 
@@ -91,6 +86,7 @@ def _deposit(_val: uint256):
     0,
     value=_val
   )
+
 # withdraws _val of 'eth' from this contracts account
 @internal
 def _withdraw(_des: address, _val: uint256):
@@ -101,6 +97,7 @@ def _withdraw(_des: address, _val: uint256):
     _val,
     0
   )
+
 # returns balance of 'weth' for this contracts account
 @internal
 @view
@@ -116,58 +113,65 @@ def _balance() -> uint256:
 def __default__():
   assert len(msg.data) == 0
   self._deposit(msg.value)
+
 # set a new admin
 @external
 def set_admin(_new_admin: address):
   assert msg.sender == self.admin
   self.whitelisted[_new_admin] = True
   self.admin = _new_admin
-  log Admin(msg.sender)
+  log Whitelist(_new_admin, True)
+
 # set a new operator
 @external
 def set_operator(_new_operator: address):
   assert msg.sender == self.admin
-  self.whitelisted[self.operator] = False
   self.whitelisted[_new_operator] = True
   self.operator = _new_operator
-  log Operator(_new_operator)
+  log Whitelist(_new_operator, True)
+
 # add/remove address from whitelist
 @external
 def set_whitelist(_address: address, _bool: bool):
   assert msg.sender == self.admin 
   self.whitelisted[_address] = _bool
   log Whitelist(_address, _bool)
+
 # toggle admin only
 @external
 def set_admin_only(_bool: bool):
   assert msg.sender == self.admin
   self.admin_only = _bool
+
 # set max to grant on a request
 @external
 def set_disperse(_amount: uint256):  
   assert msg.sender == self.admin 
   self.max_disperse = _amount
+
 # set min to retain for expenses
 @external
 def set_reserve(_amount: uint256):  
   assert msg.sender == self.admin 
   self.min_reserve = _amount
+
 # returns the faucets bento balance
 @external
 @view
 def get_reserves() -> uint256:
   return self._balance()
+
 # grant faucet funds to an address
 @external
-def grant(_beneficiary: address):
+def drip(_beneficiary: address):
   if (self.admin_only == False): # check who can call
     assert self.whitelisted[msg.sender] == True
     if ( # only if not 0 then check ops balance
       self.min_reserve > 0 and
       self.operator.balance < self.min_reserve
-    ): # if both True then first fund ops
+    ): # if both True then first fund ops *expensive
       self._withdraw(self.operator, self.min_reserve)
-  else: # else check it is admin 
+  else: # else just check it is admin *cheap
     assert msg.sender == self.admin 
   # then we can disperse funds
   self._withdraw(_beneficiary, self.max_disperse)
