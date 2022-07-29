@@ -32,9 +32,9 @@ interface SukoshiBento:
 
 #-- events --
 # log listings
-event Whitelist:
+event Allowlist:
   entity: indexed(address)
-  is_whitelisted: bool
+  is_allowlisted: bool
 # rely on bento to log deposit/withdraw
 #--
 
@@ -53,7 +53,7 @@ max_disperse: public(uint256)
 # min amount to hold at 'operator' for gas
 min_reserve: uint256 # can be 0
 # mapping of addresses with restricted access to functionality
-whitelisted: HashMap[address, bool]
+allowlisted: HashMap[address, bool]
 # weth used only to view reserves
 weth: address # check constuctor if needed
 #--
@@ -65,11 +65,11 @@ weth: address # check constuctor if needed
 def __init__(_weth: address):
   self.admin = msg.sender
   self.admin_only = True
-  self.whitelisted[msg.sender] = True
+  self.allowlisted[msg.sender] = True
   self.max_disperse = 0
   self.min_reserve = 0
   self.weth = _weth
-  log Whitelist(msg.sender, True)
+  log Allowlist(msg.sender, True)
 #--
 
 #- core functionality of 'littlebento'
@@ -118,24 +118,24 @@ def __default__():
 @external
 def set_admin(_new_admin: address):
   assert msg.sender == self.admin
-  self.whitelisted[_new_admin] = True
+  self.allowlisted[_new_admin] = True
   self.admin = _new_admin
-  log Whitelist(_new_admin, True)
+  log Allowlist(_new_admin, True)
 
 # set a new operator
 @external
 def set_operator(_new_operator: address):
   assert msg.sender == self.admin
-  self.whitelisted[_new_operator] = True
+  self.allowlisted[_new_operator] = True
   self.operator = _new_operator
-  log Whitelist(_new_operator, True)
+  log Allowlist(_new_operator, True)
 
-# add/remove address from whitelist
+# add/remove address from allowlist
 @external
-def set_whitelist(_address: address, _bool: bool):
+def set_allowlist(_address: address, _bool: bool):
   assert msg.sender == self.admin 
-  self.whitelisted[_address] = _bool
-  log Whitelist(_address, _bool)
+  self.allowlisted[_address] = _bool
+  log Allowlist(_address, _bool)
 
 # toggle admin only
 @external
@@ -165,7 +165,7 @@ def get_reserves() -> uint256:
 @external
 def drip(_beneficiary: address):
   if (self.admin_only == False): # check who can call
-    assert self.whitelisted[msg.sender] == True
+    assert self.allowlisted[msg.sender] == True
     if ( # only if more than 0 then check ops balance
       self.min_reserve > 0 and
       self.operator.balance < self.min_reserve
