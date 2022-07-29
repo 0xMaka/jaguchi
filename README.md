@@ -5,7 +5,7 @@ Where may be appropriate:
   - as a permissioned community faucet, that can go periods with low payout volume.
   - dapp onboarding, where amount granted should be enough to cover half a dozen swaps or several app interactions
 
-Where unlikely to be inappropriate:
+Where unlikely to be appropriate:
  -  as a permissionless faucet, making frequent payouts.
  -  as a lifejacket, where enough for just one swap should be airdropped. 
 
